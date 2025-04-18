@@ -7,11 +7,11 @@ function Movies({
   watchlist,
 }) {
   return (
-    <div className="p-5">
+    <div className="p-5 ">
       <div className=" m-3  text-xl font-bold  text-center">
         Trending Movies
       </div>
-      <div className="mb-2 flex  flex-row flex-wrap justify-around ">
+      <div className="mb-2 flex flex-row flex-wrap justify-center ">
         <MoviesCard
           handleAddToWatchlist={handleAddToWatchlist}
           handleRemoveFromWatchlist={handleRemoveFromWatchlist}

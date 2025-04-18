@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-import Data from "../Api/server/";
-
 function SearchMovie() {
   const [search, setSearch] = useState("");
-
   const [movies, setMovies] = useState([]);
   const [page, setPage] = useState(1);
   const [totalresults, setTotalPage] = useState(0);
@@ -14,24 +11,19 @@ function SearchMovie() {
     if (!query.trim()) return;
 
     const url = `http://www.omdbapi.com/?apikey=9b36949d&s=${query}&page=${pageNum}`;
-
     try {
       const response = await axios.get(url);
-      console.log(response.data);
-      setMovies(response.data.Search);
-      setTotalPage(parseInt(response.data.totalResults));
+      setMovies(response.data.Search || []);
+      setTotalPage(parseInt(response.data.totalResults) || 0);
     } catch (e) {
       setMovies([]);
       setTotalPage(0);
       console.error(e);
-      return null; // Or throw e if you want to handle it upstream
     }
   };
 
-  // 🎬 Default movie list (preset IDs or a keyword like "Batman")
   const fetchDefaultMovies = async () => {
-    const defaultQuery = ["Avengers", "Batman"]; // or any other default term
-
+    const defaultQuery = ["Avengers", "Batman"];
     await fetchdata(defaultQuery[1], 1);
   };
 
@@ -42,6 +34,7 @@ function SearchMovie() {
       fetchDefaultMovies();
     }
   }, [page]);
+
   const handleSearch = () => {
     setPage(1);
     fetchdata(search, 1);
@@ -50,26 +43,25 @@ function SearchMovie() {
   const totalPages = Math.ceil(totalresults / 10);
 
   return (
-    <>
-      <div className="flex justify-center my-4 ">
+    <div className="min-h-screen bg-white px-2 sm:px-6 lg:px-16">
+      <div className="flex flex-col sm:flex-row justify-center items-center gap-2 mt-6">
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search for a movie..."
-          className=" px-2 h-[3rem] w-[18rem] bg-gray-200 outline-none rounded "
+          className="px-4 h-12 w-full sm:w-80 bg-gray-200 outline-none rounded"
         />
         <button
           onClick={handleSearch}
-          className="bg-blue-500 text-white px-4 py-2 rounded-r-md hover:bg-blue-600 active:bg-red-500 transition"
+          className="bg-blue-500 text-white px-5 py-2 rounded hover:bg-blue-600 active:bg-red-500 transition w-full sm:w-auto"
         >
           Search
         </button>
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex justify-center space-x-4 my-6">
+        <div className="flex justify-center items-center space-x-4 my-6 text-center text-sm sm:text-base">
           <button
             onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
             disabled={page === 1}
@@ -77,7 +69,7 @@ function SearchMovie() {
           >
             Prev
           </button>
-          <span className="text-lg font-medium">
+          <span className="font-medium">
             Page {page} of {totalPages}
           </span>
           <button
@@ -90,43 +82,38 @@ function SearchMovie() {
         </div>
       )}
 
-      {/* This div for a tableof movie */}
-      <div className="overflow-hidden rounded-md  border border-gray-150 m-8">
-        <table className="w-full text-gray-600  table-auto">
-          <thead className="border">
-            <tr className=" ">
-              <th className="p-2">Poster</th>
-              <th className="p-2">Name</th>
-              <th className="p-2">Year</th>
-              <th className="p-2">Ratings</th>
+      {/* Responsive Scrollable Table */}
+      <div className="overflow-x-auto mt-4">
+        <table className="min-w-full text-gray-700 table-auto border-collapse">
+          <thead>
+            <tr className="bg-gray-100 border-b">
+              <th className="p-3 text-left">Poster</th>
+              <th className="p-3 text-left">Name</th>
+              <th className="p-3 text-left">Year</th>
+              <th className="p-3 text-left">Type</th>
             </tr>
           </thead>
-
           <tbody>
-            {/* Populate of the array from vovie object */}
             {movies.map((movie) => (
-              <tr key={movie.imdbID} className="border">
-                <td className=" flex items-center p-2 m-2">
+              <tr key={movie.imdbID} className="border-b hover:bg-gray-50">
+                <td className="p-3">
                   <img
                     src={
                       movie.Poster !== "N/A" ? movie.Poster : "/placeholder.png"
                     }
-                    className="h-[10rem] w-[10rem]"
                     alt={movie.Title}
+                    className="h-28 w-28 object-cover rounded shadow"
                   />
                 </td>
-
-                <td className="text-lg font-bold mt-2 p-2 text-center">
-                  {movie.Title}
-                </td>
-                <td className="p-2 text-center">{movie.Year}</td>
-                <td className="p-2 text-center">{movie.Type.toUpperCase()}</td>
+                <td className="p-3 font-semibold">{movie.Title}</td>
+                <td className="p-3">{movie.Year}</td>
+                <td className="p-3 uppercase">{movie.Type}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-    </>
+    </div>
   );
 }
 

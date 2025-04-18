@@ -5,63 +5,84 @@ function SearchMovie() {
   const [search, setSearch] = useState("");
   const [movies, setMovies] = useState([]);
   const [page, setPage] = useState(1);
-  const [totalresults, setTotalPage] = useState(0);
+  const [totalResults, setTotalResults] = useState(0);
+  const [loading, setLoading] = useState(false);
 
-  const fetchdata = async (query, pageNum = 1) => {
+  const apiKey = import.meta.env.VITE_OMDB_API_KEY;
+
+  const fetchData = async (query, pageNum = 1) => {
     if (!query.trim()) return;
+    setLoading(true);
 
-    const url = `http://www.omdbapi.com/?apikey=9b36949d&s=${query}&page=${pageNum}`;
     try {
-      const response = await axios.get(url);
+      const response = await axios.get("https://www.omdbapi.com/", {
+        params: {
+          apikey: apiKey,
+          s: query,
+          page: pageNum,
+        },
+      });
+
+      console.log("OMDB response:", response.data);
+
       setMovies(response.data.Search || []);
-      setTotalPage(parseInt(response.data.totalResults) || 0);
-    } catch (e) {
+      setTotalResults(parseInt(response.data.totalResults) || 0);
+    } catch (err) {
+      console.error(
+        "Error fetching movies:",
+        err.response?.data || err.message
+      );
       setMovies([]);
-      setTotalPage(0);
-      console.error(e);
+      setTotalResults(0);
     }
+
+    setLoading(false);
   };
 
-  const fetchDefaultMovies = async () => {
-    const defaultQuery = ["Avengers", "Batman"];
-    await fetchdata(defaultQuery[1], 1);
+  const fetchDefaultMovies = () => {
+    fetchData("Batman", 1);
   };
 
   useEffect(() => {
+    fetchDefaultMovies();
+  }, []);
+
+  useEffect(() => {
     if (search.trim()) {
-      fetchdata(search, page);
-    } else {
-      fetchDefaultMovies();
+      fetchData(search, page);
     }
   }, [page]);
 
   const handleSearch = () => {
     setPage(1);
-    fetchdata(search, 1);
+    fetchData(search, 1);
   };
 
-  const totalPages = Math.ceil(totalresults / 10);
+  const totalPages = Math.ceil(totalResults / 10);
 
   return (
-    <div className="min-h-screen bg-white px-2 sm:px-6 lg:px-16">
-      <div className="flex flex-col sm:flex-row justify-center items-center gap-2 mt-6">
+    <div className="min-h-screen bg-white px-4 py-6 sm:px-8 lg:px-16">
+      <div className="flex flex-col sm:flex-row justify-center items-center gap-2 mb-6">
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search for a movie..."
-          className="px-4 h-12 w-full sm:w-80 bg-gray-200 outline-none rounded"
+          className="px-4 h-12 w-full sm:w-80 bg-gray-200 rounded outline-none"
         />
         <button
           onClick={handleSearch}
-          className="bg-blue-500 text-white px-5 py-2 rounded hover:bg-blue-600 active:bg-red-500 transition w-full sm:w-auto"
+          disabled={!search.trim()}
+          className="bg-blue-500 text-white px-5 py-2 rounded hover:bg-blue-600 active:bg-red-500 transition w-full sm:w-auto disabled:opacity-50"
         >
           Search
         </button>
       </div>
 
+      {loading && <p className="text-center">Loading...</p>}
+
       {totalPages > 1 && (
-        <div className="flex justify-center items-center space-x-4 my-6 text-center text-sm sm:text-base">
+        <div className="flex justify-center items-center gap-4 mb-4 text-sm sm:text-base">
           <button
             onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
             disabled={page === 1}
@@ -69,7 +90,7 @@ function SearchMovie() {
           >
             Prev
           </button>
-          <span className="font-medium">
+          <span>
             Page {page} of {totalPages}
           </span>
           <button
@@ -82,34 +103,43 @@ function SearchMovie() {
         </div>
       )}
 
-      {/* Responsive Scrollable Table */}
-      <div className="overflow-x-auto mt-4">
-        <table className="min-w-full text-gray-700 table-auto border-collapse">
-          <thead>
-            <tr className="bg-gray-100 border-b">
-              <th className="p-3 text-left">Poster</th>
-              <th className="p-3 text-left">Name</th>
-              <th className="p-3 text-left">Year</th>
-              <th className="p-3 text-left">Type</th>
+      <div className="overflow-x-auto">
+        <table className="min-w-full table-auto border-collapse text-left text-sm text-gray-700">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="p-3">Poster</th>
+              <th className="p-3">Title</th>
+              <th className="p-3">Year</th>
+              <th className="p-3">Type</th>
             </tr>
           </thead>
           <tbody>
-            {movies.map((movie) => (
-              <tr key={movie.imdbID} className="border-b hover:bg-gray-50">
-                <td className="p-3">
-                  <img
-                    src={
-                      movie.Poster !== "N/A" ? movie.Poster : "/placeholder.png"
-                    }
-                    alt={movie.Title}
-                    className="h-28 w-28 object-cover rounded shadow"
-                  />
+            {movies.length > 0 ? (
+              movies.map((movie) => (
+                <tr key={movie.imdbID} className="border-b hover:bg-gray-50">
+                  <td className="p-3">
+                    <img
+                      src={
+                        movie.Poster !== "N/A"
+                          ? movie.Poster
+                          : "/placeholder.png"
+                      }
+                      alt={movie.Title}
+                      className="h-24 w-20 object-cover rounded shadow"
+                    />
+                  </td>
+                  <td className="p-3 font-medium">{movie.Title}</td>
+                  <td className="p-3">{movie.Year}</td>
+                  <td className="p-3 uppercase">{movie.Type}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="4" className="text-center p-4 text-gray-500">
+                  No movies found.
                 </td>
-                <td className="p-3 font-semibold">{movie.Title}</td>
-                <td className="p-3">{movie.Year}</td>
-                <td className="p-3 uppercase">{movie.Type}</td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>

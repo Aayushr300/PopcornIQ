@@ -50,4 +50,4 @@ git clone https://github.com/your-username/popcorniq.git
 cd popcorniq
 
 ### Made by Aayush Raj
->>>>>>> 60ee165bf689fb6699b5f13053dfa65e76fbd214
+
